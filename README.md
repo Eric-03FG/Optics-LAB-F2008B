@@ -1,1 +1,1 @@
-# Polarization-Jones-vectors-and-matrices-
+## Polarization (Jones vectors and matrices)
