@@ -1,4 +1,4 @@
-%% Simulación del interferómetro de MachZehnder
+%% Simulación del interferómetro de Mach-Zehnder
 clc; clear; close all;
 % Parámetros del haz gaussiano
 lambda = 632.8e-9; % Longitud de onda en metros (Láser He-Ne)
