@@ -91,7 +91,7 @@ z_line = ones(size(x)) * 1;
 figure;
 surf(X,Y,I1./Imax1);
 shading interp;
-colormap('bone');
+colormap('hot');
 colorbar;
 xlim([-1.5*w0 1.5*w0]);
 ylim([-1.5*w0 1.5*w0]);
@@ -132,35 +132,81 @@ subplot(2,1,1)
 x1 = 1500:1:5000;
 PS1 = S1(1200,1500:5000);
 plot(x1, PS1/max(PS1),'b');
-title('Puerto de salida 1','Interpreter','latex','FontSize', 11)
-xlabel('\''Indice de columnas','Interpreter','latex','FontSize', 11)
-ylabel('$I$ normalizada','Interpreter','latex','FontSize', 11)
+title('Puerto de salida 1','Interpreter','latex','FontSize', 16)
+xlabel('\''Indice de columnas','Interpreter','latex','FontSize', 16)
+ylabel('$I$ normalizada','Interpreter','latex','FontSize', 16)
 grid on
 subplot(2,1,2)
 x2 = 1000:1:4500;
 PS2 = S2(2200,1000:4500);
 plot(x2, PS2/max(PS2),'r');
-title('Puerto de salida 2','Interpreter','latex','FontSize', 11)
-xlabel('\''Indice de columnas','Interpreter','latex','FontSize', 11)
-ylabel('$I$ normalizada','Interpreter','latex','FontSize', 11)
+title('Puerto de salida 2','Interpreter','latex','FontSize', 16)
+xlabel('\''Indice de columnas','Interpreter','latex','FontSize', 16)
+ylabel('$I$ normalizada','Interpreter','latex','FontSize', 16)
 grid on
 
-I0 = max(PS1);
+% I0 = max(PS1);
 x3 = 1500:1:4500;
 H = 1000;
-PS4 = S4(H,1500:4500)/I0;
-PS5 = S5(H,1500:4500)/I0;
+PS4 = S4(H,1500:4500);
+PS5 = S5(H,1500:4500);
 
 figure;
 subplot(2,1,1)
-plot(x3, PS4,'Color','#77AC30');
+plot(x3, PS4/max(PS4),'Color','#77AC30');
+title('Filtro en posici\''on A','Interpreter','latex','FontSize', 16)
+xlabel('\''Indice de columnas','Interpreter','latex','FontSize', 16)
+ylabel('$I$ normalizada','Interpreter','latex','FontSize', 16)
+grid on
+subplot(2,1,2)
+plot(x3, PS5/max(PS5),'Color','#7E2F8E');
+title('Filtro a la salida','Interpreter','latex','FontSize', 16)
+xlabel('\''Indice de columnas','Interpreter','latex','FontSize', 16)
+ylabel('$I$ normalizada','Interpreter','latex','FontSize', 16)
+grid on
+
+%% Datos suavizados con redes neuronales
+close all; clc
+
+% Prepara los datos de entrada y objetivo
+input = x3;
+target = PS4/max(PS4);
+
+% Define la arquitectura de la red neuronal
+hiddenLayerSize = [10 10];  % Cambia la arquitectura según sea necesario
+net = feedforwardnet(hiddenLayerSize,'trainbr');  % Prueba diferentes funciones de entrenamiento
+
+% Entrena la red neuronal con validación cruzada
+net.divideFcn = 'dividerand';  % Cambia la función de división
+net.divideParam.trainRatio = 0.7;
+net.divideParam.valRatio = 0.15;
+net.divideParam.testRatio = 0.15;
+
+% Entrena la red neuronal
+[net,tr] = train(net, input, target);
+
+% Utiliza la red entrenada para predecir los datos suavizados
+predictedOutputs = net(input);
+
+% Visualización y análisis de resultados
+smoothedData = predictedOutputs(1, :);
+[maxima, maxIndices] = findpeaks(smoothedData);
+[minima, minIndices] = findpeaks(-smoothedData);
+minima = -minima;
+
+figure;
+plot(x3, smoothedData, 'Color','#77AC30');
+hold on;
+% plot(x1, target, 'r');
+plot(x3(maxIndices), maxima, 'r*', 'MarkerSize', 10);
+plot(x3(minIndices), minima, 'b*', 'MarkerSize', 10);
 title('Filtro en posici\''on A','Interpreter','latex','FontSize', 11)
 xlabel('\''Indice de columnas','Interpreter','latex','FontSize', 11)
 ylabel('$I$ normalizada','Interpreter','latex','FontSize', 11)
-grid on
-subplot(2,1,2)
-plot(x3, PS5,'Color','#7E2F8E');
-title('Filtro a la salida','Interpreter','latex','FontSize', 11)
-xlabel('\''Indice de columnas','Interpreter','latex','FontSize', 11)
-ylabel('$I$ normalizada','Interpreter','latex','FontSize', 11)
-grid on
+grid on;
+hold off;
+lgd = legend('Suavizado', 'M\''aximos', 'M\''inimos', 'Interpreter', 'latex');
+lgd.Location = 'best';
+
+disp(max(maxima))
+disp(min(minima))
